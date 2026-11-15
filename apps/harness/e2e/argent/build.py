@@ -78,6 +78,19 @@ def drag_after_dismiss(delay):
     return steps, check
 
 
+def pop_to_root():
+    steps = [
+        ("tap", "stack-push-b"), ("wait", "B"),
+        ("tap", "stack-push-c"), ("wait", "C"),
+        ("tap", "stack-c-pop-root"), ("wait", "A"), ("sleep", 300),
+        ("tap", "stack-push-b"), ("wait", "B"),
+        ("tap", "stack-b-pop"), ("wait", "A"),
+    ]
+    check = """if (after.depth !== 1) return `depth ${after.depth}, expected root after dismissing all screens`;
+    if (after.errors) return `${after.errors} errors`;"""
+    return steps, check
+
+
 def regrab_spring_back(delay):
     steps = [
         ("tap", "gestures-open-card"), ("wait", "card"), ("sleep", 300),
@@ -118,6 +131,7 @@ X = ["--track", "x@0.7"]
 Y = ["--track", "y@0.975"]
 # name: (lab, (steps, check), analyzer options, flaky)
 RUNS = {
+    "stack-pop-to-root": ("stack", pop_to_root(), X, False),
     **{f"regrab-spring-back-{d}": ("gestures", regrab_spring_back(d), X, False) for d in (60, 100, 150)},
     **{f"stack-spam-alt-{g}": ("stack", stack_spam(25, g, "alt"), X, False) for g in (60, 100, 150, 250, 400)},
     "stack-spam-burst-100": ("stack", stack_spam(25, 100, "burst"), X, False),

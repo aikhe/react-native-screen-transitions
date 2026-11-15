@@ -58,10 +58,14 @@ export const syncRoutesWithRemoved = <
 		);
 
 		if (nextRouteWasPresent && !previousRouteStillPresent) {
-			// Previous route was removed, mark as closing
-			closingRouteKeys.add(previousFocusedRoute.key);
-
-			derivedRoutes.push(previousFocusedRoute);
+			// keep every removed sheet mounted until its close finishes
+			const nextRouteKeys = new Set(nextRoutes.map((route) => route.key));
+			for (const route of prevRoutes) {
+				if (!nextRouteKeys.has(route.key)) {
+					closingRouteKeys.add(route.key);
+					derivedRoutes.push(route);
+				}
+			}
 		} else {
 			// Next route is now active, not closing
 			closingRouteKeys.delete(nextFocusedRoute.key);

@@ -96,6 +96,7 @@ function StackScreen({ navigation, route }) {
 			<View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
 				<Button label={`push ${next}`} testID={`stack-push-${next.toLowerCase()}`} onPress={() => navigation.push(next)} />
 				{navigation.canGoBack() ? <Button label="pop" testID={`stack-${id}-pop`} onPress={() => navigation.goBack()} /> : null}
+				{navigation.canGoBack() ? <Button label="pop to root" testID={`stack-${id}-pop-root`} onPress={() => navigation.popToTop()} /> : null}
 				<Button label="replace with C" testID={`stack-${id}-replace-c`} onPress={() => navigation.replace("C")} />
 				<Button
 					label={`rapid: push ${next} + ${NEXT[next]}`}

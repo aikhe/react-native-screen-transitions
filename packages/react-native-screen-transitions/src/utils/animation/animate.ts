@@ -1,10 +1,12 @@
-import type { WithTimingConfig } from "react-native-reanimated";
+import { type WithTimingConfig, withDelay } from "react-native-reanimated";
 import { type SpringConfig, withInternalSpring } from "./spring";
 import type { AnimationProgressDriver, AnimationStateCallback } from "./state";
 import { withInternalTiming } from "./timing";
 
-export type TimingAnimationConfig = WithTimingConfig;
-export type SpringAnimationConfig = SpringConfig;
+type AnimationDelayConfig = { delay?: number };
+
+export type TimingAnimationConfig = WithTimingConfig & AnimationDelayConfig;
+export type SpringAnimationConfig = SpringConfig & AnimationDelayConfig;
 export type ScreenAnimationConfig =
 	| SpringAnimationConfig
 	| TimingAnimationConfig;
@@ -34,12 +36,15 @@ export const animate = (
 	config?: ScreenAnimationConfig,
 	callback?: AnimationStateCallback,
 	animationProgress?: AnimationProgressDriver,
-) => {
+): number => {
 	"worklet";
 
-	if (!isSpringAnimationConfig(config)) {
-		return withInternalTiming(toValue, config, callback, animationProgress);
-	}
+	const { delay, ...animationConfig } = config ?? {};
+	const animation = isSpringAnimationConfig(animationConfig)
+		? withInternalSpring(toValue, animationConfig, callback, animationProgress)
+		: withInternalTiming(toValue, animationConfig, callback, animationProgress);
 
-	return withInternalSpring(toValue, config, callback, animationProgress);
+	return typeof delay === "number" && Number.isFinite(delay) && delay > 0
+		? withDelay(delay, animation, animationConfig.reduceMotion)
+		: animation;
 };

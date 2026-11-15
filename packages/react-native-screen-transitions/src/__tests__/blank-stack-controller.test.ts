@@ -62,6 +62,40 @@ beforeEach(() => {
 });
 
 describe("createBlankStackController", () => {
+	it.each([["b", "c"], ["c", "b"]])(
+		"retains all sheets until each dismiss animation completes: %s then %s",
+		(firstKey, secondKey) => {
+			const navigation = createNavigation();
+			const a = createRoute("a");
+			const b = createRoute("b");
+			const c = createRoute("c");
+			const descriptors = {
+				a: createDescriptor(a, navigation),
+				b: createDescriptor(b, navigation),
+				c: createDescriptor(c, navigation),
+			};
+			const routes = new Map([["b", b], ["c", c]]);
+			const controller = createBlankStackController(
+				createProps([a, b, c], descriptors, navigation),
+			);
+
+			controller.update(createProps([a], { a: descriptors.a }, navigation));
+			expect(controller.getSnapshot().state.routeKeys).toEqual(["a", "b", "c"]);
+			expect(controller.getSnapshot().state.closingRouteKeys.has("a")).toBe(false);
+			expect(controller.getSnapshot().state.scenes.filter((scene) => scene.activity === "closing").map((scene) => scene.route.key)).toEqual(["b", "c"]);
+
+			const first = routes.get(firstKey);
+			const second = routes.get(secondKey);
+			if (!first || !second) throw new Error("missing sheet route");
+			controller.handleCloseRoute({ route: first });
+			expect(controller.getSnapshot().state.routeKeys).toEqual(["a", secondKey]);
+			controller.handleCloseRoute({ route: second });
+			expect(controller.getSnapshot().state.routeKeys).toEqual(["a"]);
+			expect(controller.getSnapshot().state.closingRouteKeys.size).toBe(0);
+			expect(navigation.actions).toEqual([]);
+		},
+	);
+
   it("keeps a closing screen under a screen pushed before its close finishes", () => {
     const navigation = createNavigation();
     const a = createRoute("a");

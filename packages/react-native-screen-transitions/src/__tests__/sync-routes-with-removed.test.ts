@@ -11,6 +11,23 @@ beforeEach(() => {
 });
 
 describe("syncRoutesWithRemoved", () => {
+	it("retains every dismissed sheet and its descriptor when popping to the root", () => {
+		const closingRouteKeys = createClosingRouteKeys();
+		const descriptors = { a: {}, b: {}, c: {} };
+		const result = syncRoutesWithRemoved({
+			prevRoutes: [createRoute("a"), createRoute("b"), createRoute("c")],
+			prevDescriptors: descriptors,
+			nextRoutes: [createRoute("a")],
+			nextDescriptors: { a: descriptors.a },
+			closingRouteKeys,
+		});
+
+		expect(result.routes.map((route) => route.key)).toEqual(["a", "b", "c"]);
+		expect([...closingRouteKeys]).toEqual(["b", "c"]);
+		expect(result.descriptors.b).toBe(descriptors.b);
+		expect(result.descriptors.c).toBe(descriptors.c);
+	});
+
 	describe("basic routing", () => {
 		it("returns empty routes when nextRoutes is empty", () => {
 			const closingRouteKeys = createClosingRouteKeys();
