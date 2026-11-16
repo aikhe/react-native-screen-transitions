@@ -25,7 +25,7 @@ async function command(args: string[], cwd = root) {
 		new Response(child.stdout).text(),
 		new Response(child.stderr).text(),
 	]);
-	if (code !== 0) throw new Error(`${args.join(" ")}\n${stderr}`);
+	if (code !== 0) throw new Error(`${args.join(" ")}\n${stdout}\n${stderr}`);
 	return stdout.trim();
 }
 
@@ -105,12 +105,22 @@ for (const [directory, format] of [
 
 // emit declarations with the library's build config, then take the patched ones
 const declarations = join(staging, "declarations");
+const declarationConfig = join(staging, "tsconfig.json");
+await Bun.write(
+	declarationConfig,
+	JSON.stringify({
+		extends: join(library, "tsconfig.build.json"),
+		compilerOptions: { rootDir: join(library, "src") },
+		files: patched.map((path) => join(library, "src", path)),
+		include: [],
+	}),
+);
 await command([
 	"bun",
 	"x",
 	"tsc",
 	"-p",
-	join(library, "tsconfig.build.json"),
+	declarationConfig,
 	"--outDir",
 	declarations,
 ]);
