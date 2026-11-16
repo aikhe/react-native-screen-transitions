@@ -41,7 +41,7 @@ export type BuiltState = Pick<
 	gesture: Omit<MotionGestureValues, "internal"> & {
 		internal: Pick<
 			MotionGestureValues["internal"],
-			"progressDeltaX" | "progressDeltaY" | "snapshot"
+			"progressBaseline" | "progressDeltaX" | "progressDeltaY" | "snapshot"
 		>;
 	};
 	optionsSlot: ScreenTransitionOptions;

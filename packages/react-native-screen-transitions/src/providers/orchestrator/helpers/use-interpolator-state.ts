@@ -58,6 +58,7 @@ export function useInterpolatorState(
 							settling: motion.settling,
 							initiator: motion.initiator,
 							internal: {
+								progressBaseline: motion.internal.progressBaseline,
 								progressDeltaX: motion.internal.progressDeltaX,
 								progressDeltaY: motion.internal.progressDeltaY,
 								snapshot: motion.internal.snapshot,

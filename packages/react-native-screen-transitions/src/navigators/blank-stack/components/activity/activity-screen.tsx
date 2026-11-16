@@ -38,10 +38,13 @@ export const ActivityScreen = memo(function ActivityScreen({
 	);
 
 	const inactiveBehavior =
-		(scene.descriptor.options as { inactiveBehavior?: InactiveBehavior })
-			.inactiveBehavior ?? DEFAULT_INACTIVE_BEHAVIOR;
+		(
+			scene?.descriptor.options as
+				| { inactiveBehavior?: InactiveBehavior }
+				| undefined
+		)?.inactiveBehavior ?? DEFAULT_INACTIVE_BEHAVIOR;
 
-	const hasNestedState = "state" in scene.route;
+	const hasNestedState = scene ? "state" in scene.route : false;
 
 	const paintDriverProgress = useOptionalMotionStore(
 		paintDriverRouteKey ?? null,
@@ -66,6 +69,9 @@ export const ActivityScreen = memo(function ActivityScreen({
 	});
 
 	const isPaintDriverSettledOnJS = useSharedValueState(isPaintDriverSettled);
+
+	// child subscriptions can observe removal before the parent drops this screen
+	if (!scene) return null;
 
 	let activityViewMode: ActivityViewMode =
 		scene.activity === "active" ? "normal" : "inert";

@@ -163,12 +163,19 @@ export const hydrateTransitionState = (
 	handoff.active = useHandoffSnapshot
 		? s.gesture.internal.snapshot.active.get()
 		: s.gesture.initiator.get();
+	// keep the swipe contribution proportional to the closing transition; custom zooms
+	// still read transitionProgress independently of their frozen gesture handoff
+	const releaseBaseline = s.gesture.internal.progressBaseline.get();
+	const panReleaseWeight =
+		out.gesture.dismissing && releaseBaseline > 0
+			? Math.min(Math.max(transitionProgress / releaseBaseline, 0), 1)
+			: 1;
 	out.progress = resolveGestureAffectedProgress(
 		transitionProgress,
 		out.gesture,
 		{
-			x: s.gesture.internal.progressDeltaX.get(),
-			y: s.gesture.internal.progressDeltaY.get(),
+			x: s.gesture.internal.progressDeltaX.get() * panReleaseWeight,
+			y: s.gesture.internal.progressDeltaY.get() * panReleaseWeight,
 		},
 		options.gestureDirection,
 		getResolvedSnapBounds(

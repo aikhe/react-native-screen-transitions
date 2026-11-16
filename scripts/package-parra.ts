@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const library = join(root, "packages/react-native-screen-transitions");
 const upstreamVersion = "4.2.0";
-const version = `${upstreamVersion}-parra.2`;
+const version = `${upstreamVersion}-parra.3`;
 const patched = [
 	"utils/animation/animate.ts",
 	"navigators/blank-stack/state/helpers/navigation/sync-routes-with-removed.ts",
@@ -16,6 +16,12 @@ const patched = [
 	"providers/orchestrator/styles/helpers/resolve-slot-styles/types.ts",
 	"providers/orchestrator/styles/hooks/use-interpolated-style-maps.tsx",
 	"providers/orchestrator/styles/hooks/use-resolved-slot-style-map.tsx",
+	"providers/motion/gestures/pan/behavior/pan-lifecycle.ts",
+	"providers/motion/gestures/pan/behavior/pan-reset.ts",
+	"providers/motion/animation/helpers/hydrate-transition-state/index.ts",
+	"providers/motion/animation/helpers/hydrate-transition-state/types.ts",
+	"providers/orchestrator/helpers/use-interpolator-state.ts",
+	"navigators/blank-stack/components/activity/activity-screen.tsx",
 ];
 
 async function command(args: string[], cwd = root) {

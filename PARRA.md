@@ -27,6 +27,22 @@ The working branch is `parra-4.2`.
   interpolator handing back to the screen's own. A gesture keeps the owner until
   it releases.
 
+## Swipe release continuity (4.2.0-parra.3)
+
+A dismissing pan freezes its progress offset at release and scales that offset
+with the remaining closing transition. Previously the offset reset separately,
+which could jump a long swipe back toward the open pose before dismissing.
+Cancelled swipes still spring back and can be grabbed again. The committed
+`transitionProgress` remains independent for custom zoom geometry and handoff.
+An outgoing Activity screen also tolerates its scene disappearing before its
+parent rerenders, preventing a route-removal race from blanking the app.
+
+The `pan-dismiss-continuity` frame tests cover 180/350/650 ms swipes, dismissal
+during opening, and regrabbing a cancelled gesture. The Android frame catalog
+passes with this change. Generated `slide-release-*` visual scenarios cover
+the same release and regrab paths; running the release harness suite remains
+required for full visual verification.
+
 The app's measured button radius is an app fix. V4 removed the native-screen
 presentation switch, so `enableNativeScreens={false}` must be removed when
 migrating the app. Keep the app's explicit transparent backdrops and transition
@@ -62,7 +78,7 @@ formats and the declarations for the patched modules. Other upstream
 build artifacts are retained. Additional source changes require updating the
 packaging script, so they cannot silently ship without rebuilt artifacts.
 
-Upload the resulting `4.2.0-parra.2` tarball to the fork's `parra-v4.2.0-2` GitHub
+Upload the resulting `4.2.0-parra.3` tarball to the fork's `parra-v4.2.0-3` GitHub
 release. Parra installs that versioned release asset; the upstream repository
 root is a private monorepo, not an installable library package.
 

@@ -91,6 +91,20 @@ def pop_to_root():
     return steps, check
 
 
+def slide_release(duration):
+    steps = [
+        ("tap", "stack-push-b"), ("wait", "B"),
+        ("gesture", finger(f"down 0.15,0.6; move 0.9,0.6 {duration}; up"), f"long {duration} ms swipe continues from the released pose"),
+        ("wait", "A"), ("sleep", 300),
+        ("tap", "stack-push-b"), ("wait", "B"),
+        ("gesture", finger("down 0.15,0.6; move 0.3,0.6 350; hold 150; up; wait 60; down 0.4,0.6; move 0.99,0.6 350; up"), "regrab a cancelled swipe, then dismiss"),
+        ("wait", "A"),
+    ]
+    check = """if (after.depth !== 1) return `depth ${after.depth}, expected A after the swipe`;
+    if (after.errors) return `${after.errors} errors`;"""
+    return steps, check
+
+
 def regrab_spring_back(delay):
     steps = [
         ("tap", "gestures-open-card"), ("wait", "card"), ("sleep", 300),
@@ -131,6 +145,7 @@ X = ["--track", "x@0.7"]
 Y = ["--track", "y@0.975"]
 # name: (lab, (steps, check), analyzer options, flaky)
 RUNS = {
+    **{f"slide-release-{d}": ("stack", slide_release(d), X, False) for d in (180, 350, 650)},
     "stack-pop-to-root": ("stack", pop_to_root(), X, False),
     **{f"regrab-spring-back-{d}": ("gestures", regrab_spring_back(d), X, False) for d in (60, 100, 150)},
     **{f"stack-spam-alt-{g}": ("stack", stack_spam(25, g, "alt"), X, False) for g in (60, 100, 150, 250, 400)},

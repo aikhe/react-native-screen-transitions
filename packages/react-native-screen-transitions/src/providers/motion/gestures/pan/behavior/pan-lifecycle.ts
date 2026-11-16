@@ -156,6 +156,8 @@ export const finalizePanRelease = (
 		Math.abs(animations.transitionProgress.get() - plan.target) <= EPSILON;
 
 	if (canDriveRelease && plan.shouldDismiss) {
+		// scale the frozen swipe offset with the close instead of resetting it independently
+		gestures.internal.progressBaseline.set(animations.transitionProgress.get());
 		snapshotGestureHandoff(gestures, {
 			velocity: plan.handoffVelocity,
 		});

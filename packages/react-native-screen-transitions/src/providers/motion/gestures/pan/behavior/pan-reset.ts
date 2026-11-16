@@ -67,7 +67,7 @@ export const resetPanGestureValues = ({
 			{ value: gestures.y, toValue: 0, velocity: plan.resetVelocityY },
 			{ value: gestures.normX, toValue: 0, velocity: plan.resetVelocityNormX },
 			{ value: gestures.normY, toValue: 0, velocity: plan.resetVelocityNormY },
-			...(progressDeltaWasCommitted
+			...(progressDeltaWasCommitted || plan.shouldDismiss
 				? []
 				: [
 						{
