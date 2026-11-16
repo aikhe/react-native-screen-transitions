@@ -96,6 +96,72 @@ describe("createBlankStackController", () => {
 		},
 	);
 
+	it("links each sheet of a batch dismissal to the nearest sheet above it", () => {
+		const navigation = createNavigation();
+		const [tabs, s1, s2, s3] = ["tabs", "s1", "s2", "s3"].map(createRoute);
+		if (!tabs || !s1 || !s2 || !s3) throw new Error("missing route");
+		const descriptors = {
+			tabs: createDescriptor(tabs, navigation),
+			s1: createDescriptor(s1, navigation),
+			s2: createDescriptor(s2, navigation),
+			s3: createDescriptor(s3, navigation),
+		};
+		const controller = createBlankStackController(
+			createProps([tabs, s1, s2, s3], descriptors, navigation),
+		);
+		const nextKeys = () =>
+			controller
+				.getSnapshot()
+				.state.scenes.map((scene) => scene.nextDescriptor?.route.key);
+
+		controller.update(
+			createProps([tabs], { tabs: descriptors.tabs }, navigation),
+		);
+		expect(controller.getSnapshot().state.routeKeys).toEqual([
+			"tabs",
+			"s1",
+			"s2",
+			"s3",
+		]);
+		expect(nextKeys()).toEqual(["s1", "s2", "s3", undefined]);
+
+		// the cascade finishes top-down, each sheet still covering the one below
+		controller.handleCloseRoute({ route: s3 });
+		expect(nextKeys()).toEqual(["s1", "s2", undefined]);
+		controller.handleCloseRoute({ route: s2 });
+		expect(nextKeys()).toEqual(["s1", undefined]);
+		controller.handleCloseRoute({ route: s1 });
+		expect(controller.getSnapshot().state.routeKeys).toEqual(["tabs"]);
+		expect(navigation.actions).toEqual([]);
+	});
+
+	it("follows the latest of successive closes and leaves a later close uncovered", () => {
+		const navigation = createNavigation();
+		const [a, b, c] = ["a", "b", "c"].map(createRoute);
+		if (!a || !b || !c) throw new Error("missing route");
+		const descriptors = {
+			a: createDescriptor(a, navigation),
+			b: createDescriptor(b, navigation),
+			c: createDescriptor(c, navigation),
+		};
+		const controller = createBlankStackController(
+			createProps([a, b], { a: descriptors.a, b: descriptors.b }, navigation),
+		);
+		const nextKeys = () =>
+			controller
+				.getSnapshot()
+				.state.scenes.map((scene) => scene.nextDescriptor?.route.key);
+
+		// b closes, then c is pushed and popped before b finishes
+		controller.update(createProps([a], { a: descriptors.a }, navigation));
+		controller.update(
+			createProps([a, c], { a: descriptors.a, c: descriptors.c }, navigation),
+		);
+		controller.update(createProps([a], { a: descriptors.a }, navigation));
+		expect(controller.getSnapshot().state.routeKeys).toEqual(["a", "b", "c"]);
+		expect(nextKeys()).toEqual(["c", undefined, undefined]);
+	});
+
   it("keeps a closing screen under a screen pushed before its close finishes", () => {
     const navigation = createNavigation();
     const a = createRoute("a");

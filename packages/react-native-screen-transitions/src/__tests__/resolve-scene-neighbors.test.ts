@@ -73,4 +73,44 @@ describe("resolveSceneNeighbors", () => {
 		});
 		expect(forB2.previousDescriptor).toEqual({ id: "a" });
 	});
+
+	describe("closing scenes", () => {
+		const scenes = [
+			createScene("a"),
+			createScene("b"),
+			createScene("c"),
+			createScene("d"),
+		];
+		const isRouteClosing = (routeKey: string) => routeKey !== "a";
+
+		it("links each to the closing route above that began closing first", () => {
+			const order = new Map([
+				["d", 0],
+				["c", 1],
+				["b", 2],
+			]);
+			const resolve = (index: number) =>
+				resolveSceneNeighbors(scenes, index, isRouteClosing, (key) =>
+					order.get(key),
+				).nextDescriptor;
+
+			expect(resolve(0)).toEqual({ id: "b" });
+			expect(resolve(1)).toEqual({ id: "c" });
+			expect(resolve(2)).toEqual({ id: "d" });
+			expect(resolve(3)).toBeUndefined();
+		});
+
+		it("leaves a scene uncovered by a route that began closing after it", () => {
+			const order = new Map([
+				["b", 0],
+				["c", 1],
+				["d", 2],
+			]);
+			const result = resolveSceneNeighbors(scenes, 1, isRouteClosing, (key) =>
+				order.get(key),
+			);
+
+			expect(result.nextDescriptor).toBeUndefined();
+		});
+	});
 });

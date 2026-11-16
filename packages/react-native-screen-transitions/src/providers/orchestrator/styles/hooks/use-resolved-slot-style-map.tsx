@@ -9,14 +9,14 @@ import { useScreenRelationships } from "../../../builder/topology";
 import { useOptionalOrchestratorStore } from "../../orchestrator.provider";
 import {
 	areResettableStatesBySlotEqual,
-	type LocalStyleLayers,
+	type OwnedStyleLayers,
 	type ResettableStyleStatesBySlot,
 	resolveSlotStyles,
 	reuseEqualResolvedSlots,
 } from "../helpers/resolve-slot-styles";
 
 interface UseResolvedStylesMapParams {
-	localStylesMaps: SharedValue<LocalStyleLayers>;
+	localStylesMaps: SharedValue<OwnedStyleLayers>;
 }
 
 export const useResolvedStylesMap = ({
@@ -31,15 +31,23 @@ export const useResolvedStylesMap = ({
 		useSharedValue<ResettableStyleStatesBySlot>(NO_PROPS);
 	const previousResolvedStylesMap =
 		useSharedValue<NormalizedTransitionInterpolatedStyle>(NO_STYLES);
+	const previousOwner = useSharedValue<string | null>(null);
 
 	return useDerivedValue<NormalizedTransitionInterpolatedStyle>(() => {
 		"worklet";
+		const { layers, owner } = localStylesMaps.get();
+		const lastOwner = previousOwner.get();
 		const { resolvedStylesMap, nextPreviousStyleStatesBySlot } =
 			resolveSlotStyles({
-				localStylesMaps: localStylesMaps.get(),
+				localStylesMaps: layers,
 				ancestorStylesMap: ancestorStylesMap?.get() ?? NO_STYLES,
 				previousStyleStatesBySlot: previousStyleStatesBySlot.get(),
+				ownerChanged: lastOwner !== null && lastOwner !== owner,
 			});
+
+		if (lastOwner !== owner) {
+			previousOwner.set(owner);
+		}
 
 		if (
 			!areResettableStatesBySlotEqual(

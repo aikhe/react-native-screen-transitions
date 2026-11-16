@@ -30,13 +30,40 @@ const findPreviousDescriptor = <T extends SceneWithKey>(
 };
 
 /**
+ * The closing route directly above a closing scene that began closing first:
+ * it still covers the scene, so the pair keeps resolving while both animate
+ * out (a batch dismissal cascading top-down).
+ */
+const findCoveringClosingDescriptor = <T extends SceneWithKey>(
+	scenes: T[],
+	sceneIndex: number,
+	isRouteClosing: IsRouteClosing,
+	getRouteClosingOrder: GetRouteClosingOrder | undefined,
+): T["descriptor"] | undefined => {
+	const current = scenes[sceneIndex];
+	const above = scenes[sceneIndex + 1];
+	if (!current || !above || !isRouteClosing(above.route.key)) {
+		return undefined;
+	}
+
+	const currentOrder = getRouteClosingOrder?.(current.route.key);
+	const aboveOrder = getRouteClosingOrder?.(above.route.key);
+	if (currentOrder === undefined || aboveOrder === undefined) {
+		return undefined;
+	}
+
+	return aboveOrder < currentOrder ? above.descriptor : undefined;
+};
+
+/**
  * Resolves previous/next descriptors while accounting for routes that are
  * visually closing.
  *
  * Rules:
  * - Closing scenes keep their previous descriptor so their original pair can
- *   keep resolving while they remain mounted, but they never receive a next
- *   descriptor.
+ *   keep resolving while they remain mounted. Their next descriptor is the
+ *   closing route directly above them when it began closing first, and none
+ *   otherwise.
  * - Non-closing scenes skip over closing neighbors to find the actual active
  *   neighbor.
  * - If there is no non-closing neighbor above/below, we fall back to the first
@@ -69,7 +96,12 @@ export function resolveSceneNeighbors<T extends SceneWithKey>(
 				sceneIndex,
 				isRouteClosing,
 			),
-			nextDescriptor: undefined,
+			nextDescriptor: findCoveringClosingDescriptor(
+				scenes,
+				sceneIndex,
+				isRouteClosing,
+				getRouteClosingOrder,
+			),
 		};
 	}
 

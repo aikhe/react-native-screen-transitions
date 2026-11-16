@@ -23,7 +23,8 @@ describe("syncRoutesWithRemoved", () => {
 		});
 
 		expect(result.routes.map((route) => route.key)).toEqual(["a", "b", "c"]);
-		expect([...closingRouteKeys]).toEqual(["b", "c"]);
+		// the batch closes top-down: "b" is the latest close, the one "a" follows
+		expect([...closingRouteKeys]).toEqual(["c", "b"]);
 		expect(result.descriptors.b).toBe(descriptors.b);
 		expect(result.descriptors.c).toBe(descriptors.c);
 	});

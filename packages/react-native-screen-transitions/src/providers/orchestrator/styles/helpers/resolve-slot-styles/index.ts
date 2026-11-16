@@ -12,12 +12,17 @@ import type {
 } from "./types";
 
 export { areResettableStatesBySlotEqual } from "./are-resettable-states-equal";
-export type { LocalStyleLayers, ResettableStyleStatesBySlot } from "./types";
+export type {
+	LocalStyleLayers,
+	OwnedStyleLayers,
+	ResettableStyleStatesBySlot,
+} from "./types";
 
 type ResolveSlotStylesContext = {
 	localStylesMaps: LocalStyleLayers;
 	ancestorStylesMap: NormalizedTransitionInterpolatedStyle;
 	previousStyleStatesBySlot: ResettableStyleStatesBySlot;
+	ownerChanged: boolean;
 	resolvedStylesMap: NormalizedTransitionInterpolatedStyle;
 	nextPreviousStyleStatesBySlot: ResettableStyleStatesBySlot;
 };
@@ -465,7 +470,7 @@ const appendResolvedSlot = (
 	const { resolvedSlot, nextState } = getResolvedSlotOutput({
 		slot: getSlotForId(context, slotId),
 		previousState: context.previousStyleStatesBySlot[slotId],
-		deferMissingKeyResets: isReservedStyleSlot(slotId),
+		deferMissingKeyResets: isReservedStyleSlot(slotId) && !context.ownerChanged,
 	});
 
 	writeResolvedSlotOutput({
@@ -539,16 +544,20 @@ const appendPreviousSlots = (context: ResolveSlotStylesContext) => {
  *
  * Custom slots reset omitted keys immediately. Reserved screen slots retain
  * omitted keys because lifecycle progress does not define a safe visual reset
- * boundary.
+ * boundary. An ownership change does: when another interpolator takes over
+ * (`ownerChanged`), reserved slots reset every key the new owner omits, so a
+ * previous owner's styles can't stick.
  */
 export const resolveSlotStyles = ({
 	localStylesMaps,
 	ancestorStylesMap,
 	previousStyleStatesBySlot,
+	ownerChanged = false,
 }: {
 	localStylesMaps: LocalStyleLayers;
 	ancestorStylesMap: NormalizedTransitionInterpolatedStyle;
 	previousStyleStatesBySlot: ResettableStyleStatesBySlot;
+	ownerChanged?: boolean;
 }) => {
 	"worklet";
 	const resolvedStylesMap: NormalizedTransitionInterpolatedStyle = {};
@@ -557,6 +566,7 @@ export const resolveSlotStyles = ({
 		localStylesMaps,
 		ancestorStylesMap,
 		previousStyleStatesBySlot,
+		ownerChanged,
 		resolvedStylesMap,
 		nextPreviousStyleStatesBySlot,
 	};

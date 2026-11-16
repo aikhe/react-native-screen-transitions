@@ -2,6 +2,12 @@ import type { NormalizedTransitionInterpolatedStyle } from "../../../../../types
 
 export type LocalStyleLayers = NormalizedTransitionInterpolatedStyle[];
 
+/** A screen's local style layers and the screen whose interpolator owns them. */
+export type OwnedStyleLayers = {
+	layers: LocalStyleLayers;
+	owner: string;
+};
+
 export type ResettableStyleState = {
 	styleKeys?: Record<string, true>;
 	styleResetValues?: Record<string, unknown>;

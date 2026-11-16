@@ -2,16 +2,20 @@ import { mkdtemp } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import ts from "typescript";
 
-// retain upstream's built package and regenerate only the two patched modules
+// retain upstream's built package and regenerate only the patched modules
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const library = join(root, "packages/react-native-screen-transitions");
 const upstreamVersion = "4.2.0";
-const version = `${upstreamVersion}-parra.1`;
+const version = `${upstreamVersion}-parra.2`;
 const patched = [
 	"utils/animation/animate.ts",
 	"navigators/blank-stack/state/helpers/navigation/sync-routes-with-removed.ts",
+	"navigators/blank-stack/state/helpers/navigation/resolve-scene-neighbors.ts",
+	"providers/orchestrator/styles/helpers/resolve-slot-styles/index.ts",
+	"providers/orchestrator/styles/helpers/resolve-slot-styles/types.ts",
+	"providers/orchestrator/styles/hooks/use-interpolated-style-maps.tsx",
+	"providers/orchestrator/styles/hooks/use-resolved-slot-style-map.tsx",
 ];
 
 async function command(args: string[], cwd = root) {
@@ -99,35 +103,24 @@ for (const [directory, format] of [
 		throw new AggregateError(build.logs, `${directory} build failed`);
 }
 
-const animationPath = "utils/animation/animate.ts";
-const declaration = ts.transpileDeclaration(
-	await Bun.file(join(library, "src", animationPath)).text(),
-	{
-		fileName: animationPath,
-		reportDiagnostics: true,
-		compilerOptions: {
-			isolatedDeclarations: true,
-			newLine: ts.NewLineKind.LineFeed,
-		},
-	},
-);
-if (
-	declaration.diagnostics?.some(
-		(entry) => entry.category === ts.DiagnosticCategory.Error,
-	)
-) {
-	throw new Error(
-		ts.formatDiagnosticsWithColorAndContext(declaration.diagnostics, {
-			getCurrentDirectory: () => root,
-			getCanonicalFileName: (name) => name,
-			getNewLine: () => "\n",
-		}),
+// emit declarations with the library's build config, then take the patched ones
+const declarations = join(staging, "declarations");
+await command([
+	"bun",
+	"x",
+	"tsc",
+	"-p",
+	join(library, "tsconfig.build.json"),
+	"--outDir",
+	declarations,
+]);
+for (const path of patched) {
+	const declaration = path.replace(/\.tsx?$/, ".d.ts");
+	await Bun.write(
+		join(packaged, "lib/typescript", declaration),
+		Bun.file(join(declarations, declaration)),
 	);
 }
-await Bun.write(
-	join(packaged, "lib/typescript/utils/animation/animate.d.ts"),
-	declaration.outputText,
-);
 
 const sourceSha = await command(["git", "rev-parse", "HEAD"]);
 const manifest = await Bun.file(join(packaged, "package.json")).json();

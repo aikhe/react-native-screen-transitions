@@ -27,7 +27,10 @@ import { syncSelectedInterpolatorOptions } from "../../helpers/selected-interpol
 import { createInterpolatorScope } from "../helpers/create-interpolator-scope";
 import { normalizeSlots } from "../helpers/normalize-slots";
 import { resolveInterpolatorStyleHandoff } from "../helpers/resolve-interpolator-style-handoff";
-import type { LocalStyleLayers } from "../helpers/resolve-slot-styles";
+import type {
+	LocalStyleLayers,
+	OwnedStyleLayers,
+} from "../helpers/resolve-slot-styles";
 import {
 	type SelectedInterpolatorFrame,
 	selectInterpolatorFrame,
@@ -116,7 +119,8 @@ const runInterpolator = ({
  * At an ownership handoff, the current interpolator remains live but is
  * evaluated without the next-screen relationship. The next owner replaces
  * matching scalar keys and composes its live transforms after the current
- * screen's self-owned transforms.
+ * screen's self-owned transforms. The layers carry their owner's screen key,
+ * so the resolver can reset what a previous owner left behind.
  */
 export const useInterpolatedStylesMap = ({
 	pipeline,
@@ -124,6 +128,9 @@ export const useInterpolatedStylesMap = ({
 	pipeline: ScreenAnimationPipeline;
 }) => {
 	const isScreenReady = useMotionStore((store) => store.isScreenReady);
+	const currentScreenKey = useBuilderStore(
+		(s) => s.derivations.currentScreenKey,
+	);
 	const nextScreenKey = useBuilderStore((s) => s.derivations.nextScreenKey);
 	// A screen still closing above this one (a push landed during its close) keeps covering it until
 	// the new screen's open starts, so the next interpolator keeps this screen's style meanwhile.
@@ -179,7 +186,7 @@ export const useInterpolatedStylesMap = ({
 		},
 	);
 
-	const localStylesMaps = useDerivedValue<LocalStyleLayers>(() => {
+	const localStylesMaps = useDerivedValue<OwnedStyleLayers>(() => {
 		const props = screenInterpolatorProps.get();
 
 		const { current, next } = props;
@@ -228,6 +235,12 @@ export const useInterpolatedStylesMap = ({
 		const interpolatorOptionsOwner = currentOwnsInterpolator
 			? "current"
 			: "next";
+		// a gesture keeps the next screen as owner until it releases, so the
+		// styles it set stay put meanwhile
+		const owner =
+			currentOwnsInterpolator && !isInGestureMode
+				? currentScreenKey
+				: (nextScreenKey ?? currentScreenKey);
 
 		// Once the next interpolator owns the relationship, the current
 		// interpolator remains responsible only for its own live presentation.
@@ -250,7 +263,7 @@ export const useInterpolatedStylesMap = ({
 		});
 
 		if (initialDestinationStyleGate.shouldWithholdStyles) {
-			return NO_STYLE_LAYERS;
+			return { layers: NO_STYLE_LAYERS, owner };
 		}
 
 		if (interpolatorOptionsOwner === "current") {
@@ -267,9 +280,12 @@ export const useInterpolatedStylesMap = ({
 				nextStylesMap: undefined,
 			});
 
-			return handoff.localStylesMaps.length
-				? handoff.localStylesMaps
-				: NO_STYLE_LAYERS;
+			return {
+				layers: handoff.localStylesMaps.length
+					? handoff.localStylesMaps
+					: NO_STYLE_LAYERS,
+				owner,
+			};
 		}
 
 		const nextSelectedFrame = selectNextInterpolatorFrame(
@@ -295,9 +311,12 @@ export const useInterpolatedStylesMap = ({
 			nextStylesMap: nextResult?.stylesMap,
 		});
 
-		return handoff.localStylesMaps.length
-			? handoff.localStylesMaps
-			: NO_STYLE_LAYERS;
+		return {
+			layers: handoff.localStylesMaps.length
+				? handoff.localStylesMaps
+				: NO_STYLE_LAYERS,
+			owner,
+		};
 	});
 
 	return localStylesMaps;

@@ -22,15 +22,18 @@ const resolve = ({
 	localStylesMaps,
 	ancestorStylesMap = {},
 	previousStyleStatesBySlot = {},
+	ownerChanged,
 }: {
 	localStylesMaps: LocalStyleLayers;
 	ancestorStylesMap?: NormalizedTransitionInterpolatedStyle;
 	previousStyleStatesBySlot?: ResettableStyleStatesBySlot;
+	ownerChanged?: boolean;
 }) =>
 	resolveSlotStyles({
 		localStylesMaps,
 		ancestorStylesMap,
 		previousStyleStatesBySlot,
+		ownerChanged,
 	});
 
 describe("resolveSlotStyles", () => {
@@ -241,6 +244,60 @@ describe("resolveSlotStyles", () => {
 				backgroundColor: true,
 				opacity: true,
 			});
+		});
+
+		it("resets the previous owner's keys when ownership changes", () => {
+			// a sheet's interpolator styled the page below it, composed with the page's own fade
+			const covered = resolve({
+				localStylesMaps: [
+					{
+						content: {
+							style: {
+								opacity: 1,
+								transform: [{ translateY: 24 }, { scale: 0.96 }],
+								borderTopLeftRadius: 32,
+								overflow: "hidden",
+							},
+						},
+						backdrop: {
+							style: { opacity: 0.2, backgroundColor: "black" },
+						},
+					},
+				],
+			});
+			const settled = resolve({
+				localStylesMaps: [{ content: { style: { opacity: 1 } } }],
+				previousStyleStatesBySlot: covered.nextPreviousStyleStatesBySlot,
+			});
+
+			// the page's own fade takes over again
+			const handedOff = resolve({
+				localStylesMaps: [{ content: { style: { opacity: 1 } } }],
+				previousStyleStatesBySlot: settled.nextPreviousStyleStatesBySlot,
+				ownerChanged: true,
+			});
+
+			expect(settled.resolvedStylesMap.content?.style).toEqual({ opacity: 1 });
+			expect(handedOff.resolvedStylesMap.content?.style).toEqual({
+				opacity: 1,
+				transform: IDENTITY_TRANSFORM,
+				borderTopLeftRadius: 0,
+				overflow: "visible",
+			});
+			expect(handedOff.resolvedStylesMap.backdrop?.style).toEqual({
+				opacity: 1,
+				backgroundColor: "transparent",
+			});
+			expect(handedOff.nextPreviousStyleStatesBySlot.content?.styleKeys).toEqual(
+				{ opacity: true },
+			);
+			expect(handedOff.nextPreviousStyleStatesBySlot.backdrop).toBeUndefined();
+
+			const after = resolve({
+				localStylesMaps: [{ content: { style: { opacity: 1 } } }],
+				previousStyleStatesBySlot: handedOff.nextPreviousStyleStatesBySlot,
+			});
+			expect(after.resolvedStylesMap.content?.style).toEqual({ opacity: 1 });
 		});
 
 	});

@@ -58,14 +58,18 @@ export const syncRoutesWithRemoved = <
 		);
 
 		if (nextRouteWasPresent && !previousRouteStillPresent) {
-			// keep every removed sheet mounted until its close finishes
+			// keep every removed sheet mounted until its close finishes. a batch
+			// closes top-down, so its lowest route is the latest close and the
+			// screen it reveals follows it (resolveSceneNeighbors)
 			const nextRouteKeys = new Set(nextRoutes.map((route) => route.key));
-			for (const route of prevRoutes) {
-				if (!nextRouteKeys.has(route.key)) {
-					closingRouteKeys.add(route.key);
-					derivedRoutes.push(route);
-				}
+			const removed = prevRoutes.filter(
+				(route) => !nextRouteKeys.has(route.key),
+			);
+			for (let i = removed.length - 1; i >= 0; i--) {
+				const route = removed[i];
+				if (route) closingRouteKeys.add(route.key);
 			}
+			derivedRoutes.push(...removed);
 		} else {
 			// Next route is now active, not closing
 			closingRouteKeys.delete(nextFocusedRoute.key);
