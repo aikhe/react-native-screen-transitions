@@ -64,7 +64,23 @@ export type BoundsNavigationZoomDragOptions = {
 	scale?: BoundsNavigationZoomAxisResponse;
 };
 
+export type BoundsNavigationZoomOpacityRange = readonly [
+	inputStart: number,
+	inputEnd: number,
+	outputStart?: number,
+	outputEnd?: number,
+];
+
+export type BoundsNavigationZoomOpacityRanges = {
+	open?: BoundsNavigationZoomOpacityRange;
+	close?: BoundsNavigationZoomOpacityRange;
+};
+
 export type BoundsNavigationZoomOptions = {
+	/** Focused content opacity over combined transition progress, separately for open and close. */
+	focusedElementOpacity?: BoundsNavigationZoomOpacityRanges;
+	/** Matched source opacity over combined transition progress, separately for open and close. */
+	unfocusedElementOpacity?: BoundsNavigationZoomOpacityRanges;
 	/**
 	 * Geometry that the zoomed content should resolve against.
 	 *

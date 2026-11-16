@@ -30,6 +30,7 @@ LABS = {
     "ownership": ("open-ownership", "home"),
     "heavy": ("open-heavy", "A"),
     "sheet": ("open-sheet", "Home"),
+    "bounds": ("open-bounds", "grid"),
 }
 
 
@@ -141,10 +142,25 @@ def sheet_regrab(delay, mode):
     return steps, None
 
 
+def zoom_crossfade():
+    steps = [
+        ("tap", "bounds-mode-crossfade"),
+        ("tap", "bounds-tile-b"), ("wait", "crossfade"),
+        ("tap", "bounds-back"), ("wait", "grid"),
+        ("tap", "bounds-tile-d"), ("wait", "crossfade"),
+        ("gesture", finger("down 0.5,0.4; move 0.5,0.85 400; up"), "source/detail crossfade after a downward dismissal"),
+        ("wait", "grid"),
+    ]
+    check = """if (after.depth !== 1) return `depth ${after.depth}, expected the bounds grid`;
+    if (after.errors) return `${after.errors} errors`;"""
+    return steps, check
+
+
 X = ["--track", "x@0.7"]
 Y = ["--track", "y@0.975"]
 # name: (lab, (steps, check), analyzer options, flaky)
 RUNS = {
+    "zoom-crossfade": ("bounds", zoom_crossfade(), [], False),
     **{f"slide-release-{d}": ("stack", slide_release(d), X, False) for d in (180, 350, 650)},
     "stack-pop-to-root": ("stack", pop_to_root(), X, False),
     **{f"regrab-spring-back-{d}": ("gestures", regrab_spring_back(d), X, False) for d in (60, 100, 150)},

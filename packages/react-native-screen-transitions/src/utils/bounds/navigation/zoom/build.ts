@@ -186,14 +186,21 @@ export function buildZoomStyles({
 			progress: transitionProgress,
 		});
 
-		const focusedOpacityRange = active.closing
+		const focusedOpacityDefault = active.closing
 			? ZOOM_FOCUSED_ELEMENT_CLOSE_OPACITY_RANGE
 			: ZOOM_FOCUSED_ELEMENT_OPEN_OPACITY_RANGE;
+		const focusedOpacityRange =
+			(active.closing
+				? zoomOptions?.focusedElementOpacity?.close
+				: zoomOptions?.focusedElementOpacity?.open) ?? focusedOpacityDefault;
 
 		const focusedFade = interpolate(
 			transitionProgress,
 			[focusedOpacityRange[0], focusedOpacityRange[1]],
-			[focusedOpacityRange[2], focusedOpacityRange[3]],
+			[
+				focusedOpacityRange[2] ?? focusedOpacityDefault[2],
+				focusedOpacityRange[3] ?? focusedOpacityDefault[3],
+			],
 			"clamp",
 		);
 
@@ -259,13 +266,20 @@ export function buildZoomStyles({
 		};
 	}
 
-	const unfocusedOpacityRange = active.closing
+	const unfocusedOpacityDefault = active.closing
 		? ZOOM_UNFOCUSED_ELEMENT_CLOSE_OPACITY_RANGE
 		: ZOOM_UNFOCUSED_ELEMENT_OPEN_OPACITY_RANGE;
+	const unfocusedOpacityRange =
+		(active.closing
+			? zoomOptions?.unfocusedElementOpacity?.close
+			: zoomOptions?.unfocusedElementOpacity?.open) ?? unfocusedOpacityDefault;
 	const unfocusedFade = interpolate(
 		transitionProgress,
 		[unfocusedOpacityRange[0], unfocusedOpacityRange[1]],
-		[unfocusedOpacityRange[2], unfocusedOpacityRange[3]],
+		[
+			unfocusedOpacityRange[2] ?? unfocusedOpacityDefault[2],
+			unfocusedOpacityRange[3] ?? unfocusedOpacityDefault[3],
+		],
 		"clamp",
 	);
 	const unfocusedScale = interpolate(

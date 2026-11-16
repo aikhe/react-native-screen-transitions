@@ -50,6 +50,15 @@ interpolators when adapting the new API.
 
 ## Verification
 
+The parra.4 release restores optional `focusedElementOpacity` and
+`unfocusedElementOpacity` open/close tuples from the 3.6 API. Custom curves also
+control when the source stops tracking its geometry, so extending its fade does
+not leave it reset to its grid position while visible. Unspecified curves keep
+the upstream 4.2 defaults. Parra uses the 3.6 curves, its original Default/Fling
+spring pair, and the Android whole-page rounding behavior for the Cost demos.
+The targeted `zoom-opacity-ranges` tests cover late source tracking, the early
+closing detail fade, default behavior and input-only tuples.
+
 The new route and delay regressions fail against upstream v4.2.0 and pass with
 these changes: 34 targeted tests pass. The batch-neighbor and ownership-reset
 regressions fail without the parra.2 changes and pass with them
@@ -78,7 +87,7 @@ formats and the declarations for the patched modules. Other upstream
 build artifacts are retained. Additional source changes require updating the
 packaging script, so they cannot silently ship without rebuilt artifacts.
 
-Upload the resulting `4.2.0-parra.3` tarball to the fork's `parra-v4.2.0-3` GitHub
+Upload the resulting `4.2.0-parra.4` tarball to the fork's `parra-v4.2.0-4` GitHub
 release. Parra installs that versioned release asset; the upstream repository
 root is a private monorepo, not an installable library package.
 

@@ -33,7 +33,7 @@ import { Button, colorFor, createBlankStackNavigator, interpolate, LabContainer,
 
 const GROUP = "tiles";
 const TILES = ["a", "b", "c", "d"];
-const MODES = ["zoom", "bound", "morph", "reveal", "pager"];
+const MODES = ["zoom", "bound", "morph", "reveal", "pager", "crossfade"];
 const Stack = createBlankStackNavigator();
 const ZoomFlatList = Transition.FlatList as typeof FlatList;
 
@@ -43,15 +43,23 @@ const routeId = ({ active, current, next }) => {
 	return active?.route?.params?.id ?? next?.route?.params?.id ?? current?.route?.params?.id ?? "";
 };
 
-const zoomOptions = (target) => ({
+const zoomOptions = (target, crossfade = false) => ({
 	gestureEnabled: true,
 	gestureDirection: ["bidirectional", "pinch-in"],
-	transitionSpec: Transition.Specs.Zoom,
+	transitionSpec: crossfade ? { open: Transition.Specs.DefaultSpec, close: Transition.Specs.FlingSpec } : Transition.Specs.Zoom,
 	screenStyleInterpolator: (props) => {
 		"worklet";
 		const id = routeId(props);
 		if (!id) return {};
-		return props.bounds({ id, group: GROUP }).navigation.zoom(target ? { target } : undefined);
+		const styles = props.bounds({ id, group: GROUP }).navigation.zoom({
+			...(target ? { target } : {}),
+			...(crossfade ? {
+				focusedElementOpacity: { open: [0, 0.5, 0, 1], close: [0.6, 1, 0, 1] },
+				unfocusedElementOpacity: { open: [1, 2, 1, 0], close: [1.9, 2, 1, 0] },
+				backdropOpacity: 0,
+			} : {}),
+		});
+		return crossfade && props.focused ? { ...styles, clip: undefined } : styles;
 	},
 });
 
@@ -232,6 +240,7 @@ function Component() {
 				<Stack.Screen name="morph" component={MorphScreen} options={morphOptions} />
 				<Stack.Screen name="reveal" component={RevealScreen} options={revealOptions} />
 				<Stack.Screen name="pager" component={PagerScreen} options={zoomOptions("bound")} />
+				<Stack.Screen name="crossfade" component={BoundScreen} options={zoomOptions(undefined, true)} />
 			</Stack.Navigator>
 		</LabContainer>
 	);

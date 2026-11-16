@@ -7,8 +7,10 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const library = join(root, "packages/react-native-screen-transitions");
 const upstreamVersion = "4.2.0";
-const version = `${upstreamVersion}-parra.3`;
+const version = `${upstreamVersion}-parra.4`;
 const patched = [
+	"types/bounds.types.ts",
+	"utils/bounds/navigation/zoom/build.ts",
 	"utils/animation/animate.ts",
 	"navigators/blank-stack/state/helpers/navigation/sync-routes-with-removed.ts",
 	"navigators/blank-stack/state/helpers/navigation/resolve-scene-neighbors.ts",
